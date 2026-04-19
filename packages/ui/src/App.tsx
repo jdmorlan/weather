@@ -46,9 +46,8 @@ function App() {
     <div className="app">
       <Sidebar active={page} onChange={setPage} />
       <div className="app-content">
-        <header className="app-header">
-          <h1>Weather</h1>
-          {page === "outlook" && (
+        {page === "outlook" && (
+          <header className="app-header">
             <div className="header-controls">
               <MapModeToggle mode={mapMode} onChange={setMapMode} />
               {mapMode === "outlook" && (
@@ -58,8 +57,8 @@ function App() {
                 </>
               )}
             </div>
-          )}
-        </header>
+          </header>
+        )}
         <main className="app-main">
           {page === "outlook" ? (
             <div className="outlook-layout">
