@@ -11,6 +11,8 @@ const VITE_DEV_URL = process.env.VITE_DEV_URL ?? "http://localhost:5173";
 const NOAA_BASE =
   "https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer";
 const TEMPEST_BASE = "https://swd.weatherflow.com/swd/rest";
+const NWS_BASE = "https://api.weather.gov";
+const NWS_USER_AGENT = "weather.hl.jmorlan.com (jay.d.morlan@gmail.com)";
 
 // Bun's fetch auto-decompresses gzip/br responses but preserves the upstream
 // Content-Encoding header; strip it (and stale Content-Length) before forwarding
@@ -40,6 +42,18 @@ Bun.serve({
       upstream.searchParams.set("station_id", TEMPEST_STATION_ID);
       upstream.searchParams.set("token", TEMPEST_TOKEN);
       return forward(await fetch(upstream));
+    }
+
+    if (url.pathname.startsWith("/api/nws")) {
+      const upstream = new URL(
+        NWS_BASE + url.pathname.replace("/api/nws", "") + url.search,
+      );
+      return forward(await fetch(upstream, {
+        headers: {
+          "User-Agent": NWS_USER_AGENT,
+          "Accept": "application/geo+json",
+        },
+      }));
     }
 
     if (!SERVE_STATIC) {

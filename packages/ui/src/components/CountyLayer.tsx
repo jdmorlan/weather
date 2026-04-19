@@ -4,10 +4,10 @@ import type { FeatureCollection } from "geojson";
 import type { Layer, PathOptions } from "leaflet";
 
 const countyStyle: PathOptions = {
-  color: "#999",
-  weight: 0.8,
+  color: "#333",
+  weight: 1,
   fillOpacity: 0,
-  opacity: 0.6,
+  opacity: 0.85,
 };
 
 export function CountyLayer() {

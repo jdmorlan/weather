@@ -1,18 +1,20 @@
-import { useState } from "react";
 import type { DailyForecast, HourlyForecast } from "../types/tempest";
+import {
+  computeDailyPrecip,
+  computeRainWindow,
+  computeWindWindow,
+} from "../utils/forecast";
 
 interface ForecastProps {
   daily: DailyForecast[];
   hourly: HourlyForecast[];
 }
 
-type ForecastView = "today" | "weekly";
-
-// Thresholds for rain indicators (inches)
-const HOURLY_RAIN_THRESHOLD = 0.01; // any measurable rain
-const HOURLY_HEAVY_THRESHOLD = 0.10; // heavy rain — mud-maker
-const DAILY_RAIN_THRESHOLD = 0.10; // light rain day
-const DAILY_HEAVY_THRESHOLD = 0.25; // heavy rain day
+// Thresholds for hourly/daily precip indicator styling (inches).
+const HOURLY_RAIN_THRESHOLD = 0.01;
+const HOURLY_HEAVY_THRESHOLD = 0.10;
+const DAILY_RAIN_THRESHOLD = 0.10;
+const DAILY_HEAVY_THRESHOLD = 0.25;
 
 function precipClass(amount: number, rainThreshold: number, heavyThreshold: number): string {
   if (amount >= heavyThreshold) return "precip-heavy";
@@ -27,199 +29,19 @@ function isDaytime(time: number, daily: DailyForecast[]): boolean {
   return false;
 }
 
-function computeDailyPrecip(
-  daily: DailyForecast[],
-  hourly: HourlyForecast[]
-): Map<number, number> {
-  const totals = new Map<number, number>();
-  for (const day of daily) {
-    const nextDay = day.day_start_local + 86400;
-    let sum = 0;
-    for (const h of hourly) {
-      if (h.time >= day.day_start_local && h.time < nextDay) {
-        sum += h.precip ?? 0;
-      }
-    }
-    totals.set(day.day_start_local, sum);
-  }
-  return totals;
-}
-
-function computeRainWindow(hourly: HourlyForecast[], day: DailyForecast): string {
-  const dayStart = day.day_start_local;
-  const dayEnd = dayStart + 86400;
-  const dayHours = hourly.filter((h) => h.time >= dayStart && h.time < dayEnd);
-
-  const rainyHours = dayHours.filter((h) => h.precip_probability >= 30);
-
-  if (rainyHours.length === 0) return "Dry all day";
-  if (rainyHours.length === dayHours.length) return "Rain expected all day";
-
-  const first = rainyHours[0];
-  const last = rainyHours[rainyHours.length - 1];
-
-  const fmt = (t: number) =>
-    new Date(t * 1000).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      hour12: true,
-    });
-
-  return `Rain likely ${fmt(first.time)} \u2013 ${fmt(last.time)}`;
-}
-
-function formatSunTime(timestamp: number): string {
-  return new Date(timestamp * 1000).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-}
-
 export function Forecast({ daily, hourly }: ForecastProps) {
-  const [view, setView] = useState<ForecastView>("today");
-  const [dayOffset, setDayOffset] = useState(0);
+  const today = daily[0];
+  if (!today) return null;
+
   const dailyPrecip = computeDailyPrecip(daily, hourly);
+  const dayStart = today.day_start_local;
+  const dayEnd = dayStart + 86400;
+  const dayHourly = hourly.filter((h) => h.time >= dayStart && h.time < dayEnd);
 
   return (
     <div className="forecast">
-      <ViewToggle
-        view={view}
-        dayOffset={dayOffset}
-        onViewChange={setView}
-        onDayOffsetChange={setDayOffset}
-      />
-      {view === "today" ? (
-        <TodayView
-          daily={daily}
-          hourly={hourly}
-          dayOffset={dayOffset}
-          dailyPrecip={dailyPrecip}
-        />
-      ) : (
-        <WeeklyView daily={daily} dailyPrecip={dailyPrecip} />
-      )}
-    </div>
-  );
-}
-
-function ViewToggle({
-  view,
-  dayOffset,
-  onViewChange,
-  onDayOffsetChange,
-}: {
-  view: ForecastView;
-  dayOffset: number;
-  onViewChange: (v: ForecastView) => void;
-  onDayOffsetChange: (d: number) => void;
-}) {
-  return (
-    <div className="forecast-view-toggle">
-      <button
-        className={`day-btn ${view === "today" && dayOffset === 0 ? "active" : ""}`}
-        onClick={() => {
-          onViewChange("today");
-          onDayOffsetChange(0);
-        }}
-      >
-        Today
-      </button>
-      <button
-        className={`day-btn ${view === "today" && dayOffset === 1 ? "active" : ""}`}
-        onClick={() => {
-          onViewChange("today");
-          onDayOffsetChange(1);
-        }}
-      >
-        Tomorrow
-      </button>
-      <button
-        className={`day-btn ${view === "weekly" ? "active" : ""}`}
-        onClick={() => onViewChange("weekly")}
-      >
-        Weekly
-      </button>
-    </div>
-  );
-}
-
-
-function DaySummary({
-  day,
-  hourly,
-  precipAmount,
-}: {
-  day: DailyForecast;
-  hourly: HourlyForecast[];
-  precipAmount: number;
-}) {
-  const date = new Date(day.day_start_local * 1000);
-  const now = new Date();
-  const isToday =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-
-  const dayLabel = isToday
-    ? "Today"
-    : date.toLocaleDateString("en-US", { weekday: "long" });
-  const dateLabel = date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-  const rainWindow = computeRainWindow(hourly, day);
-
-  return (
-    <div className="day-summary">
-      <div className="day-summary-header">
-        <div className="day-summary-title">
-          {dayLabel} &mdash; {dateLabel}
-        </div>
-        <div className="day-summary-conditions">{day.conditions}</div>
-      </div>
-      <div className="day-summary-details">
-        <span className="day-summary-temps">
-          <span className="daily-high">{Math.round(day.air_temp_high)}&deg;</span>
-          {" / "}
-          <span className="daily-low">{Math.round(day.air_temp_low)}&deg;</span>
-        </span>
-        <span className="day-summary-sun">
-          Sunrise {formatSunTime(day.sunrise)} &middot; Sunset{" "}
-          {formatSunTime(day.sunset)}
-        </span>
-      </div>
-      <div className="day-summary-precip">
-        {day.precip_probability}% chance of rain &middot; {precipAmount.toFixed(2)}&Prime;
-        expected
-      </div>
-      <div className="day-summary-rain">{rainWindow}</div>
-    </div>
-  );
-}
-
-function TodayView({
-  daily,
-  hourly,
-  dayOffset,
-  dailyPrecip,
-}: {
-  daily: DailyForecast[];
-  hourly: HourlyForecast[];
-  dayOffset: number;
-  dailyPrecip: Map<number, number>;
-}) {
-  const day = daily[dayOffset];
-  if (!day) return null;
-
-  const dayStart = day.day_start_local;
-  const dayEnd = dayStart + 86400;
-  const dayHourly = hourly.filter((h) => h.time >= dayStart && h.time < dayEnd);
-  const precipAmount = dailyPrecip.get(day.day_start_local) ?? 0;
-
-  return (
-    <>
-      <DaySummary day={day} hourly={hourly} precipAmount={precipAmount} />
+      <RainCard day={today} hourly={hourly} />
+      <WindCard day={today} hourly={hourly} />
       <section className="forecast-section">
         <h3 className="forecast-heading">Hourly Forecast</h3>
         <div className="forecast-hourly">
@@ -232,7 +54,72 @@ function TodayView({
           ))}
         </div>
       </section>
-    </>
+      <WeeklyView daily={daily} dailyPrecip={dailyPrecip} />
+    </div>
+  );
+}
+
+function RainCard({ day, hourly }: { day: DailyForecast; hourly: HourlyForecast[] }) {
+  const rain = computeRainWindow(hourly, day);
+  if (!rain) return null;
+
+  const fmt = (t: number) =>
+    new Date(t * 1000).toLocaleTimeString("en-US", { hour: "numeric", hour12: true });
+  const windowText = rain.allDay
+    ? "All day"
+    : rain.start === rain.end
+      ? `around ${fmt(rain.start)}`
+      : `${fmt(rain.start)} \u2013 ${fmt(rain.end)}`;
+  const label = rain.heavy ? "Heavy rain" : "Rain likely";
+
+  return (
+    <div className={`rain-card ${rain.heavy ? "rain-card-heavy" : ""}`}>
+      <div className="rain-card-header">
+        <span className="rain-card-icon" aria-hidden="true">
+          {rain.heavy ? "🌧️" : "☔"}
+        </span>
+        <span className="rain-card-title">{label}</span>
+      </div>
+      <div className="rain-card-detail">
+        <span>{windowText}</span>
+        <span className="rain-card-sep">&middot;</span>
+        <span>peak {rain.peakProb}%</span>
+        <span className="rain-card-sep">&middot;</span>
+        <span>{rain.totalExpected.toFixed(2)}&Prime; expected</span>
+      </div>
+    </div>
+  );
+}
+
+function WindCard({ day, hourly }: { day: DailyForecast; hourly: HourlyForecast[] }) {
+  const wind = computeWindWindow(hourly, day);
+  if (!wind) return null;
+
+  const fmt = (t: number) =>
+    new Date(t * 1000).toLocaleTimeString("en-US", { hour: "numeric", hour12: true });
+  const windowText = wind.allDay
+    ? "All day"
+    : wind.start === wind.end
+      ? `around ${fmt(wind.start)}`
+      : `${fmt(wind.start)} \u2013 ${fmt(wind.end)}`;
+  const label = wind.high ? "High winds" : "Windy";
+
+  return (
+    <div className={`wind-card ${wind.high ? "wind-card-high" : ""}`}>
+      <div className="wind-card-header">
+        <span className="wind-card-icon" aria-hidden="true">
+          {wind.high ? "💨" : "🌬️"}
+        </span>
+        <span className="wind-card-title">{label}</span>
+      </div>
+      <div className="wind-card-detail">
+        <span>{windowText}</span>
+        <span className="wind-card-sep">&middot;</span>
+        <span>from {wind.peakDirection}</span>
+        <span className="wind-card-sep">&middot;</span>
+        <span>gusts to {wind.maxGust} mph</span>
+      </div>
+    </div>
   );
 }
 

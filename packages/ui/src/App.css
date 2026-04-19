@@ -276,23 +276,47 @@ body {
 }
 
 /* Current weather hero */
-.current-weather {
+/* Top-of-page layout: Today (left, larger) + Tomorrow (right, compact) */
+.day-cards-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 768px) {
+  .day-cards-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.current-weather,
+.tomorrow-card {
   background: #16213e;
   border: 1px solid #0f3460;
   border-radius: 10px;
-  padding: 24px;
-  margin-bottom: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cw-label,
+.tomorrow-card .cw-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8888a0;
+  font-weight: 600;
 }
 
 .cw-hero {
   display: flex;
   align-items: center;
   gap: 20px;
-  margin-bottom: 24px;
 }
 
 .cw-temp {
-  font-size: 4rem;
+  font-size: 3.75rem;
   font-weight: 700;
   color: #fff;
   line-height: 1;
@@ -314,38 +338,97 @@ body {
   color: #8888a0;
 }
 
-.cw-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+.cw-hilo {
+  font-size: 1rem;
+  color: #b0b0c8;
+  font-variant-numeric: tabular-nums;
 }
 
-.cw-detail {
-  background: #1a1a2e;
-  border: 1px solid #0f3460;
-  border-radius: 6px;
-  padding: 12px;
+.cw-sun {
+  font-size: 0.85rem;
+  color: #8888a0;
+  font-variant-numeric: tabular-nums;
+}
+
+.cw-grid {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
+/* Tomorrow card — compact summary on the right */
+.tomorrow-conditions {
+  font-size: 1rem;
+  color: #c0c0d0;
+}
+
+.tomorrow-hilo {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.tomorrow-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tomorrow-badge {
+  background: #1a1a2e;
+  border: 1px solid #1e3a6a;
+  border-left-width: 3px;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  color: #c0c0d0;
+  font-variant-numeric: tabular-nums;
+}
+.tomorrow-badge-rain { border-left-color: #4da6ff; }
+.tomorrow-badge-rain-heavy { border-left-color: #ff6b35; }
+.tomorrow-badge-wind { border-left-color: #4da6ff; }
+.tomorrow-badge-wind-high { border-left-color: #ff8800; }
+
+.tomorrow-sun {
+  font-size: 0.8rem;
+  color: #8888a0;
+  font-variant-numeric: tabular-nums;
+  margin-top: auto;
+}
+
+.cw-detail {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
+}
+
 .cw-detail-label {
+  width: 110px;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #8888a0;
+  flex-shrink: 0;
 }
 
 .cw-detail-value {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #e0e0e0;
+  font-variant-numeric: tabular-nums;
 }
 
 .cw-detail-sub {
   font-size: 0.8rem;
   color: #6070a0;
+  font-variant-numeric: tabular-nums;
+}
+.cw-detail-sub::before {
+  content: "·";
+  color: #555570;
+  margin-right: 6px;
 }
 
 /* Forecast view toggle */
@@ -707,4 +790,250 @@ body {
 .forecast-hourly::-webkit-scrollbar-thumb {
   background: #0f3460;
   border-radius: 3px;
+}
+
+/* Rain advisory card — appears only on rainy days */
+.rain-card {
+  background: #141828;
+  border: 1px solid #1e3a6a;
+  border-left: 3px solid #4da6ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #e0e0f0;
+}
+.rain-card-heavy {
+  border-left-color: #ff6b35;
+  background: #1a1d2d;
+}
+.rain-card-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.rain-card-icon {
+  font-size: 1.2rem;
+}
+.rain-card-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4da6ff;
+  font-weight: 600;
+}
+.rain-card-heavy .rain-card-title {
+  color: #ff6b35;
+}
+.rain-card-detail {
+  font-size: 0.9rem;
+  color: #b0b0c8;
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+}
+.rain-card-sep {
+  color: #555570;
+}
+
+/* Wind advisory card — appears only on windy days */
+.wind-card {
+  background: #141828;
+  border: 1px solid #1e3a6a;
+  border-left: 3px solid #4da6ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #e0e0f0;
+}
+.wind-card-high {
+  border-left-color: #ff8800;
+  background: #1a1d2d;
+}
+.wind-card-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.wind-card-icon {
+  font-size: 1.2rem;
+}
+.wind-card-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4da6ff;
+  font-weight: 600;
+}
+.wind-card-high .wind-card-title {
+  color: #ff8800;
+}
+.wind-card-detail {
+  font-size: 0.9rem;
+  color: #b0b0c8;
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+}
+.wind-card-sep {
+  color: #555570;
+}
+
+/* Radar legend — mirrors .legend position, appears when radar mode is on */
+.radar-legend {
+  position: absolute;
+  bottom: 70px;
+  right: 16px;
+  background: rgba(22, 33, 62, 0.92);
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  padding: 10px 14px;
+  z-index: 1000;
+  min-width: 180px;
+}
+.radar-legend-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8888a0;
+  margin-bottom: 8px;
+}
+.radar-legend-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.radar-legend-swatch {
+  flex: 1;
+}
+.radar-legend-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #c0c0d0;
+}
+
+/* Outlook page column layout — map fills, controls pin to bottom */
+.outlook-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Map mode toggle (Radar | SPC Outlook) */
+.map-mode-toggle {
+  display: inline-flex;
+  background: #10121e;
+  border: 1px solid #1e3a6a;
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+.map-mode-toggle .mode-btn {
+  background: transparent;
+  color: #8888a0;
+  border: none;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.map-mode-toggle .mode-btn:hover {
+  color: #e0e0f0;
+}
+.map-mode-toggle .mode-btn.active {
+  background: #0f3460;
+  color: #e0e0f0;
+}
+
+/* Radar controls — bottom-of-viewport strip in the outlook layout */
+.radar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #141828;
+  border-top: 1px solid #1e3a6a;
+  font-size: 0.85rem;
+  color: #b0b0c8;
+  flex-shrink: 0;
+}
+
+.radar-play-btn {
+  background: #0f3460;
+  color: #e0e0f0;
+  border: 1px solid #1e3a6a;
+  border-radius: 4px;
+  width: 36px;
+  height: 28px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.radar-play-btn:hover {
+  background: #1e3a6a;
+}
+
+.radar-slider {
+  flex: 1;
+  accent-color: #4da6ff;
+}
+
+.radar-time {
+  min-width: 130px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.radar-latest-badge {
+  background: rgba(77, 166, 255, 0.15);
+  border: 1px solid rgba(77, 166, 255, 0.4);
+  color: #4da6ff;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Home focus button — floats over the map */
+.focus-home-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  background: white;
+  color: #333;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  width: 34px;
+  height: 34px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.focus-home-btn:hover {
+  background: #f0f0f0;
 }
